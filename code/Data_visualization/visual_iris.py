@@ -4,7 +4,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn.metrics import classification_report, accuracy_score
 import matplotlib.pyplot as plt
-
+import joblib
 iris = load_iris()
 X, y = iris.data, iris.target
 '''
@@ -26,6 +26,8 @@ print("Accuracy:", accuracy_score(y_test, y_pred))
 print("\nClassification Report:\n", classification_report(y_test, y_pred, target_names=iris.target_names))
 print(model.coef_)
 print(model.intercept_)
+joblib.dump(model, 'model.sav')
+joblib.dump(scaler, 'scaler.sav')
 '''
 def projection(x, coef):
     A, B = coef[0], coef[1]
