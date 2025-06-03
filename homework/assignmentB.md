@@ -2,7 +2,7 @@
 
 Updated 2223 GMT+8 Apr 29, 2025
 
-2025 spring, Complied by <mark>同学的姓名、院系</mark>
+2025 spring, Complied by <mark>张景天 物理学院</mark>
 
 
 
@@ -69,7 +69,7 @@ for _ in range(T):
 
 代码运行截图 <mark>（至少包含有"Accepted"）</mark>
 
-
+![image-20250527013140762](C:\Users\13706\AppData\Roaming\Typora\typora-user-images\image-20250527013140762.png)
 
 
 
@@ -102,7 +102,7 @@ class Solution:
 
 代码运行截图 <mark>（至少包含有"Accepted"）</mark>
 
-
+![image-20250527013206140](C:\Users\13706\AppData\Roaming\Typora\typora-user-images\image-20250527013206140.png)
 
 
 
@@ -110,21 +110,43 @@ class Solution:
 
 binary search, http://cs101.openjudge.cn/practice/22528/
 
-思路：
+思路：找到60%处的学生将其调至85分，其实就是直接解方程
 
 
 
 代码：
 
 ```python
+def transform(data, a):
+    return [a*x + 1.1**(a*x) for x in data]
 
+def check(data, a, target):
+    new_data = transform(data, a)
+    cnt = 0
+    for x in new_data:
+        if x >= target:
+            cnt += 1
+    return cnt < 0.6 * len(data)
+
+def bisect_left(x, lo, hi, check):
+    while lo < hi:
+        mid = (lo + hi) // 2
+        if check(mid, x):
+            lo = mid + 1
+        else:
+            hi = mid
+    return lo
+
+data = list(map(float, input().split()))
+data.sort()
+print(bisect_left(85, 0, 1000000000, lambda mid, x: check(data, mid/1000000000, x)))
 ```
 
 
 
 代码运行截图 <mark>（至少包含有"Accepted"）</mark>
 
-
+![image-20250527013225387](C:\Users\13706\AppData\Roaming\Typora\typora-user-images\image-20250527013225387.png)
 
 
 
@@ -132,21 +154,67 @@ binary search, http://cs101.openjudge.cn/practice/22528/
 
 dfs, https://sunnywhy.com/sfbj/10/3/382
 
-思路：
+思路：拓扑排序判环
 
 
 
 代码：
 
 ```python
+from collections import defaultdict, deque
 
+class Vertex:
+    def __init__(self, key):
+        self.key = key
+        self.neighbors = []  # [key]
+
+class Graph:
+    def __init__(self):
+        self.vertices = {}  # {key: vertex}
+
+def topological_sort(graph: Graph):
+    in_degree = defaultdict(int)
+    for u in graph.vertices.values():
+        for v_key in u.neighbors:
+            in_degree[v_key] += 1
+
+    queue = deque()
+    topo_order = []
+
+    for u in graph.vertices.values():
+        if in_degree[u.key] == 0:
+            queue.append(u.key)
+
+    while queue:
+        u_key = queue.popleft()
+        topo_order.append(u_key)
+        for v_key in graph.vertices[u_key].neighbors:
+            in_degree[v_key] -= 1
+            if in_degree[v_key] == 0:
+                queue.append(v_key)
+    if len(topo_order) != len(graph.vertices):
+        return
+    return topo_order
+
+n, m = map(int, input().split())
+graph = Graph()
+for i in range(n):
+    graph.vertices[i] = Vertex(i)
+for _ in range(m):
+    u_key, v_key = map(int, input().split())
+    graph.vertices[u_key].neighbors.append(v_key)
+
+if topological_sort(graph):
+    print("No")
+else:
+    print("Yes")
 ```
 
 
 
 代码运行截图 <mark>（至少包含有"Accepted"）</mark>
 
-
+![image-20250527004217406](C:\Users\13706\AppData\Roaming\Typora\typora-user-images\image-20250527004217406.png)
 
 
 
@@ -154,21 +222,83 @@ dfs, https://sunnywhy.com/sfbj/10/3/382
 
 Dijkstra, http://cs101.openjudge.cn/practice/05443/
 
-思路：
+思路：每次dijkstra得到了全图上的单源最短路径，同一起点可以复用
 
 
 
 代码：
 
 ```python
+from heapq import *
 
+class Vertex:
+    def __init__(self, key):
+        self.key = key
+        self.neighbors = []  # [(key, weight)]
+
+class Graph:
+    def __init__(self):
+        self.vertices = {}  # {key: vertex}
+
+def dijkstra(graph: Graph, start: Vertex):
+    path = {key: {'distance': float("inf"), 'path': []} for key in graph.vertices}
+    path[start.key]['distance'] = 0
+    heap = [(0, start.key)]
+    while heap:
+        current_distance, current_vertex_key = heappop(heap)
+
+        for neighbor_key, weight in graph.vertices[current_vertex_key].neighbors:
+            new_distance = current_distance + weight
+            if new_distance < path[neighbor_key]['distance']:
+                path[neighbor_key]['distance'] = new_distance
+                path[neighbor_key]['path'] = path[current_vertex_key]['path'] + [(current_vertex_key, weight)]
+                heappush(heap, (new_distance, neighbor_key))
+    return path
+
+import sys
+input = sys.stdin.read
+
+data = input().split()
+graph = Graph()
+index = 0
+p = int(data[index])
+index += 1
+for _ in range(p):
+    graph.vertices[data[index]] = Vertex(data[index])
+    index += 1
+Q = int(data[index])
+index += 1
+for _ in range(Q):
+    u_key, v_key, w = data[index], data[index+1], int(data[index+2])
+    index += 3
+    graph.vertices[u_key].neighbors.append((v_key, w))
+    graph.vertices[v_key].neighbors.append((u_key, w))
+R = int(data[index])
+index += 1
+pathes = {}
+result = []
+for _ in range(R):
+    start_key, end_key = data[index], data[index+1]
+    index += 2
+    if start_key not in pathes:
+        path = dijkstra(graph, graph.vertices[start_key])
+        pathes[start_key] = path
+    else:
+        path = pathes[start_key]
+    end_path = path[end_key]["path"]
+    path_str = ""
+    for v_key, weight in end_path:
+        path_str += f"{v_key}->({weight})->"
+    path_str += end_key
+    result.append(path_str)
+print("\n".join(result))
 ```
 
 
 
 代码运行截图 <mark>（至少包含有"Accepted"）</mark>
 
-
+![image-20250527013302565](C:\Users\13706\AppData\Roaming\Typora\typora-user-images\image-20250527013302565.png)
 
 
 
@@ -239,7 +369,7 @@ else:
 
 代码运行截图 <mark>（至少包含有"Accepted"）</mark>
 
-
+![image-20250527013320639](C:\Users\13706\AppData\Roaming\Typora\typora-user-images\image-20250527013320639.png)
 
 
 
@@ -247,7 +377,7 @@ else:
 
 <mark>如果发现作业题目相对简单，有否寻找额外的练习题目，如“数算2025spring每日选做”、LeetCode、Codeforces、洛谷等网站上的题目。</mark>
 
-
+五一假期不得空闲，cupt迫在眉睫，数算内容只得先放一放
 
 
 
